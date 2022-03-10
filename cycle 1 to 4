@@ -1,0 +1,360 @@
+create table "faculty" (
+	"staffid" int primary key,
+	"title" varchar(25),
+	"status" varchar(25),
+	"tenured" date
+);
+
+create table "staff" (
+	"staffid" int primary key,
+	"stffirstname" varchar(25),
+	"stflastname" varchar(25),
+	"stfstreetaddress" varchar(50),
+	"stfcity" varchar(25),
+	"stfstate" varchar(25),
+	"stfzipcode" int,
+	"stfareacode" int,
+	"stfphonenumber" char(10),
+	"datehired" date,
+	"salary" dec(8,2),
+	"position" varchar(25)
+);
+
+create table "faculty_categories" (
+	"staffid" int,
+	"categoryid" int,
+	primary key("staffid", "categoryid")
+);
+
+create table "faculty_classes" (
+	"staffid" int, "classid" int,
+	primary key("staffid", "classid")
+);
+
+create table "faculty_subjects" (
+	"staffid" int, "classid" int,
+	"proficiencyrating" dec(2,1),
+	primary key("staffid", "classid")
+);
+
+create table "categories" (
+	"categoryid" int primary key,
+	"categorydescription" varchar(50),
+	"departmentid" int
+);
+
+create table "subjects" (
+	"subjectid" int primary key,
+	"categoryid" int,
+	"subjectcode" int,
+	"subjectname" varchar(25),
+	"subjectdescription" varchar(50),
+	foreign key("categoryid") references "categories"("categoryid")
+);
+
+create table "buildings" (
+	"buildingcode" int primary key,
+	"buildingname" varchar(25),
+	"numberoffloors" int
+);
+
+create table "classrooms" (
+	"classroomid" int primary key,
+	"buildingcode" int,
+	"phoneavailable" char,
+	foreign key("buildingcode") references "buildings"("buildingcode")
+);
+
+create table "classes" (
+	"classid" int primary key,
+	"subjectid" int,
+	"classroomid" int,
+	"starttime" time,
+	"duration" time,
+	foreign key("subjectid") references "subjects"("subjectid"),
+	foreign key("classroomid") references "classrooms"("classroomid")
+);
+
+create table "student_class_status" (
+	"categoryid" varchar primary key,
+	"categorydescription" varchar(50)
+);
+
+create table "students" (
+	"studentid" int primary key,
+	"studfirstname" varchar(25),
+	"studlastname" varchar(25),
+	"studstreetaddress" varchar(50),
+	"studcity" varchar(25),
+	"studstate" varchar(25),
+	"studzipcode" int,
+	"studareacode" int,
+	"studphonenumber" char(10)
+);
+
+create table "student_schedules" (
+	"classid" int,
+	"studentid" int,
+	"classstatus" varchar(50),
+	"grade" int,
+	primary key("classid", "studentid"),
+	foreign key("classstatus") references "student_class_status"("categoryid")
+);
+
+	alter table "staff"
+	rename column "datehired" to "joiningdate";
+
+alter table "subjects"
+drop column "subjectdescription";
+
+insert into staff values (
+	1, 'mathew', 'varghese',
+	'2b, baker st.', 'kochi', 'kerala',
+	667867, 441, '9653412907',
+	'2020-12-25', 150000.00, 'principal'
+);
+
+insert into faculty values (
+	1, 'professor', 'active', 'y'
+);
+
+alter table "student_class_status"
+alter column "categoryid" type varchar(50);
+
+select * from "faculty";
+
+//cycle2
+
+insert into "faculty" values
+(1, 'pr', 'active', '2022-04-30'),
+(2, 'ap', 'active', '2025-01-30'),
+(3, 'pr', 'transfer', '2020-03-20'),
+(4, 'hod', 'active', '2030-12-30'),
+(5, 'asp', 'retire', '2019-02-15')
+;
+
+select * from "staff";
+
+insert into "staff" values(1,'adarsh','g','vallicode','pathanamthitta','kerala',689648,0468,'7070707070','2020-12-12',10000,'professor');
+insert into "staff" values(2,'ajin','baby','koothatukulam','kottayam','kerala',689689,0472,'6969696969','2019-10-15',8000,'assistant professor');
+insert into "staff" values(3,'allen','y','chavadimukku','kollam','kerala',686648,0488,'4204202020','2014-05-07',9500,'professor');
+insert into "staff" values(4,'alvin','antony','sreekaryam','thiruvananthapuram','kerala',689696,0458,'1234512345','2012-12-12',15000,'head of the department');
+insert into "staff" values(5,'ajay','k','sulthan bathery','wayanad','kerala',689666,0451,'7070712345','2011-01-11',8000,'associate professor');
+
+insert into "faculty_categories" values
+(1, 101),
+(2, 102),
+(3, 103),
+(4, 104),
+(5, 105);
+
+insert into "faculty_classes" values
+(1, 3003),
+(2, 3001),
+(3, 3002),
+(4, 3004),
+(5, 3005);
+
+insert into "faculty_subjects" values
+(1, 13, 7.0),
+(2, 17, 8.1),
+(3, 12, 8.4),
+(4, 20, 7.9),
+(5, 23, 9.5);
+insert into "faculty_subjects" values
+(1, 12, 7.7),
+(4, 24, 9.1),
+(4, 12, 6.1);
+
+insert into "categories" values
+(101, 'arts', 201),
+(102, 'science', 202),
+(103, 'mathematics', 203),
+(104, 'social science', 204),
+(105, 'businees studies', 205);
+
+insert into "subjects" values
+(10, 101, 10, 'craft'),
+(11, 101, 11, 'music'),
+(12, 101, 12, 'painting'),
+(13, 102, 13, 'physics'),
+(14, 102, 14, 'chemistry'),
+(15, 102, 15, 'biology'),
+(16, 103, 16, 'linear algebra'),
+(17, 103, 17, 'calculus'),
+(18, 103, 18, 'graph theory'),
+(19, 104, 19, 'history'),
+(20, 104, 20, 'geography'),
+(21, 104, 21, 'politics'),
+(22, 105, 22, 'economics'),
+(23, 105, 23, 'statistics')
+;
+
+insert into "buildings" values
+(1001, 'alpha', 3),
+(1002, 'beta', 2),
+(1003, 'gamma', 4),
+(1004, 'delta', 3);
+
+insert into "classrooms" values
+(2001,1001, 'y'),
+(2002,1001,'n'),
+(2003,1001,'y'),
+(2004,1002,'y'),
+(2005,1002,'y'),
+(2006,1003,'n'),
+(2007,1003,'n'),
+(2008,1003,'y'),
+(2009,1003,'n'),
+(2010,1004,'n'),
+(2011,1004,'y'),
+(2012,1004,'y')
+;
+
+insert into "classes" values
+(3001,13,2001,'09:00:00','00:30:00'),
+(3002,17,2004,'09:00:00','01:00:00'),
+(3003,12,2008,'10:00:00','00:45:00'),
+(3004,20,2010,'10:30:00','01:30:00'),
+(3005,23,2012,'14:00:00','02:00:00');
+
+insert into "student_class_status" values
+('pt', 'part time'),
+('ft', 'full time');
+
+insert into "students" values
+(7001,'jack','joyce','la road','hearthrow','ladine',145236,785534,1324531315),
+(7002,'lara','croft','new burrow','oxford','desperado',461133,543345,9446083477),
+(7003,'ellie','joel','ginbow','polta','wendes',655641,977755,7055526732),
+(7004,'jesse','faden','ordinary','wertof','jaydenfare',865766,121112,8093478900),
+(7005,'aiden','pearce','monopoly','dominic','crossroads',242231,554246,6047892345);
+
+insert into "student_schedules" values
+(3001,7001,'pt', 10),
+(3001,7002, 'ft', 4),
+(3002,7001, 'pt', 8),
+(3003, 7003, 'pt', 9),
+(3005, 7004,'ft', 7);
+
+select s."staffid", s."stffirstname"
+from "faculty" as f, "staff" as s
+where (s."staffid" = f."staffid") and ("tenured"-"joiningdate")/365.0 > 5;
+
+select s."staffid", s."stffirstname", (age("tenured", current_date)) as "remainingtenured"
+from "faculty" as f, "staff" as s
+where (s."staffid" = f."staffid") and (f."status" = 'active');
+
+select * from "staff"
+where ("salary">10000) and ("salary"<50000);
+
+select count(distinct "position") from "staff";
+
+select "stfareacode", count(*)
+from "staff"
+group by "stfareacode";
+
+
+//cycle_3;
+
+select count(*) as "staff_count" from (
+select "staffid", count(*) from "faculty_subjects"
+group by "staffid" having count(*)=2 or count(*)=3
+)
+as "staff_subjects";
+
+select max(avg_salary) as "max_avg_salary" from
+(select "position", trunc(avg("salary"),2) as avg_salary from "staff"
+group by "position")
+as avg_table;
+
+select c."classid", c."subjectid", max(ss."grade") as "min_grade"
+from "students" as s, "student_schedules" as ss, "classes" as c
+where s."studentid" = ss."studentid" and ss."classid" = c."classid"
+group by c."classid",c."subjectid";
+
+select ""subjectname""
+from "subjects"
+where ""subjectname"" like '%a%';
+
+
+update "students"
+set "studphonenumber"=9534249012
+where "studentid"=7005;
+select "studfirstname", "studlastname", "studphonenumber"
+from "students"
+where cast("studphonenumber" as text) like '95%';
+
+select "classid", "duration"
+from "classes"
+where "duration"=
+(select max("duration") as "duration"
+from "classes"
+where "duration" < '00:45:00');
+
+select s."studentid", s."studfirstname", sj.""subjectname""
+from "students" s, "student_schedules" ss, "classes" c, "subjects" sj
+where s."studentid"=ss."studentid" and
+c."subjectid"=sj."subjectid" and
+ss."classid"=c."classid"
+group by sj.""subjectname"", s."studentid"
+order by s."studentid", sj.""subjectname"", s."studfirstname" desc;
+
+update "staff" set "salary"=20000 where "staffid"=5;
+update "staff" set "stfstate"='tamil nadu' where "staffid"=5;
+update "staff" set "stfstate"='tamil nadu' where "staffid"=3;
+update "staff" set "salary"=23000 where "staffid"=3;
+update "staff" set "salary"=12000 where "staffid"=1;
+
+select "position", trunc(avg("salary"),2) as avg_sal
+from "staff"
+where ("stfstate" = 'kerala' or "stfstate"='tamil nadu' and "salary">10000)
+group by "position" having avg("salary")< 25000;
+
+//cycle 4;
+
+revoke insert on students from user1;
+insert into students values(106,'bill','gates','m2,apollo road','hyderabad','telengane',866,389,'9886353212');
+
+grant insert on students to user1;
+insert into students values(106,'bill','gates','m2,apollo road','hyderabad','telengane',866,389,'9886353212');
+
+begin;
+insert into "staff" values(6,'gopi','sundar','east fort','trivandrum',
+'kerala',697866,716,'7306076345','2016-06-24',25000,'professor');
+commit;
+
+select "staffid", "position", 's' as "employee" from "staff"
+union all
+select "staffid", "title", 'f' as "employee" from "faculty";
+
+select s."subjectname", count(*)::decimal*100/(select count(*)
+from "subjects" s, "classes" c, "student_schedules" ss where s."subjectid"=c."subjectid" and
+c."classid"=ss."classid" and s."subjectname"='physics') as "pass percentage"
+from "subjects" s, "classes" c, "student_schedules" ss
+where s."subjectid"=c."subjectid" and c."classid"=ss."classid" and
+s."subjectname"='physics' and ss."grade">5
+group by s."subjectname";
+
+select b."buildingname",c."classroomid",count(*)
+from "buildings" b join "classrooms" c on b."buildingcode"=c."buildingcode"
+join "classes" cs on c."classroomid"=cs."classroomid"
+join "student_schedules" ss on cs."classid"=ss."classid"
+group by c."classroomid",b."buildingname"
+order by b."buildingname";
+
+select "studfirstname", "studentid", "stffirstname", "staffid", "studzipcode" as "zipcode"
+from "students", "staff"
+where "studzipcode"="stfzipcode";
+
+insert into "students" values(7006,'bill','gates','m2,apollo road','hyderabad','telengane',689648,389389,'9886353212');
+
+alter table "faculty_subjects"
+rename column "classid" to "subjectid";
+
+select "staffid", "stffirstname"
+from "staff"
+where "staffid"
+in(
+select "staffid" from "faculty_subjects"
+where "subjectid"=(select "subjectid" from "subjects" where "subjectname" = 'physics')
+);
