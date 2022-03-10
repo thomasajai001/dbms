@@ -1,0 +1,280 @@
+TRIGGERS
+
+1.
+CREATE TRIGGER copy_row
+BEFORE DELETE ON student_schedules
+FOR EACH ROW EXECUTE PROCEDURE copyfunc();
+
+CREATE OR REPLACE FUNCTION copyfunc() 
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+      INSERT INTO student_schedules_copy VALUES(old.classid,old.studentid,old.classstatus,old.grade);
+      RETURN OLD;
+END $$;
+
+2.Create a trigger on Students table in which it stops deletion and updation on
+Sundays and allows insertion only on Fridays.
+
+CREATE TRIGGER day
+BEFORE UPDATE or DELETE or INSERT ON students
+FOR EACH ROW EXECUTE PROCEDURE check_day();
+
+CREATE OR REPLACE FUNCTION check_day()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+DECLARE
+day varchar(10);
+BEGIN
+	SELECT INTO day to_char(current_date, 'Day');
+	IF TG_OP='INSERT' THEN
+		IF day!='Friday' THEN
+			raise exception 'insertion allowed only on fridays';
+		END IF;
+		RETURN NEW;
+	END IF;
+
+	IF TG_OP='UPDATE' or TG_OP='DELETE' THEN
+		IF day='Sunday' THEN
+			raise exception 'deletion or updation not allowed on sundays';
+		END IF;
+		RETURN OLD;
+	END IF;
+END $$;
+
+
+3.
+
+CREATE TRIGGER check_salary
+BEFORE UPDATE ON staff
+FOR EACH ROW EXECUTE PROCEDURE stop_update();
+
+CREATE OR REPLACE FUNCTION stop_update()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+	IF new.salary>old.salary THEN
+		raise exception 'no update if new salary greater than old salary';	
+	END IF;
+	RETURN NEW;
+END $$;
+
+2.
+
+CURSORS
+
+1.
+
+CREATE OR REPLACE FUNCTION get_faculty(cityname varchar(25))
+RETURNS void
+language plpgsql
+AS $$
+DECLARE
+	declare c_staff refcursor;
+	r record;
+BEGIN
+	OPEN c_staff for select * from staff;
+	FETCH c_staff INTO r;
+	  
+	WHILE FOUND c_staff
+	LOOP
+		IF r.stfcity=cityname THEN
+       			raise notice '% % %',r.stffirstname,r.staffid,r.stfcity;
+       		END IF;
+		FETCH c_staff INTO r;
+     	END LOOP;
+    
+	CLOSE c_staff;
+END;$$;
+
+2.
+
+CREATE OR REPLACE FUNCTION get_staff(staffname varchar(25))
+RETURNS void
+language plpgsql
+AS $$
+DECLARE
+	c_staff CURSOR(name varchar(25)) 
+	FOR select * from staff s,faculty_categories f,categories c
+	where s.staffid=f.staffid and f.categoryid=c.categoryid and c.departmentid=
+	(select categories.departmentid from staff,faculty_categories,categories 
+	where staff.staffid=faculty_categories.staffid and faculty_categories.categoryid=categories.categoryid and staff.stffirstname=name);
+	
+	r record;
+BEGIN
+	OPEN c_staff(staffname);
+	FETCH c_staff INTO r;
+	
+	WHILE FOUND c_staff 
+	LOOP
+		raise notice 'name:%  dept id:%',r.stffirstname,r.departmentid;
+		FETCH c_staff INTO r;
+     	END LOOP;
+    
+	CLOSE c_staff;
+END;$$;
+
+3.
+
+DO $$
+DECLARE
+	c_staff cursor for select * from staff order by salary desc;
+	count integer := 0;
+	r record;
+BEGIN
+	OPEN c_staff;
+	  
+	WHILE count<2
+	LOOP
+		FETCH c_staff INTO r;
+		EXIT WHEN NOT FOUND;
+     		raise notice 'staffid:% , salary:%',r.staffid,r.salary;
+		count := count+1;
+     	END LOOP;
+    
+	CLOSE c_staff;
+END;$$;
+
+FUNCTIONS
+
+1.
+
+CREATE OR REPLACE PROCEDURE func1(facultyid int)
+LANGUAGE plpgsql
+AS $$
+DECLARE 
+	r record;
+BEGIN
+	select s.salary,c.departmentid,c.categorydescription
+	into r
+	from staff s,faculty_categories f,categories c
+	where s.staffid=f.staffid and f.categoryid=c.categoryid and s.staffid=facultyid;
+
+	raise notice 'salary:% , dept id:% , dept name:%',r.salary,r.departmentid,r.categorydescription;
+END;$$;
+
+2.
+
+CREATE OR REPLACE FUNCTION func_faculty()
+RETURNS VOID
+LANGUAGE plpgsql
+AS $$
+DECLARE
+r record;
+cnt integer;
+BEGIN
+	FOR r IN (select * from categories)
+	LOOP
+		select count(*)
+		into cnt
+		from staff s,faculty_categories f,categories c
+		where s.staffid=f.staffid and f.categoryid=c.categoryid and c.departmentid=r.departmentid;
+		
+		IF cnt>4 THEN
+			raise notice 'dept name:% , dept id:%',r.categorydescription,r.departmentid;
+		END IF;
+	END LOOP;
+END $$;
+
+3. Write a procedure to check whether the faculty is eligible for salary hike based on
+the period of service. If the period of service is more than two years, give 5%
+increment, otherwise display a message “NO INCREMENT”
+
+CREATE OR REPLACE FUNCTION salary_hike()
+RETURNS VOID
+LANGUAGE plpgsql
+AS $$
+DECLARE
+r record;
+service integer;
+new_salary decimal(10,2);
+old_salary decimal(10,2);
+BEGIN
+	for r in (select * from staff)
+	loop
+		service :=(current_date-r.joiningdate)/365;
+		if service>2 then
+			old_salary :=r.salary;
+			new_salary :=r.salary+0.05*r.salary;
+			update staff set salary=new_salary where staffid=r.staffid;
+			raise notice 'staffid:% , service period:% years , old salary:% , new salary:%',r.staffid,service,old_salary,new_salary;
+		else
+			raise notice 'staffid:% , service period:% years , NO INCREMENT ',r.staffid,service;	
+		end if;
+	end loop;
+END $$;
+
+
+4. Using a function, delete the details of subject from the subject table having no
+students.
+
+CREATE OR REPLACE FUNCTION delete_subjects()
+RETURNS VOID
+LANGUAGE plpgsql
+AS $$
+DECLARE
+r record;
+student_count integer;
+BEGIN
+	FOR r IN select * from subjects
+	LOOP
+		select count(ss.studentid)
+		into student_count
+		from subjects s,classes c,student_schedules ss
+		where s.subjectid=c.subjectid and c.classid=ss.classid and s.subjectid=r.subjectid;
+
+		IF student_count=0 THEN
+			raise notice 'subject name:% (subjectcode:%) deleted due to 0 student count',r.subjectname,r.subjectcode;
+			delete from subjects where subjectid=r.subjectid;
+		END IF;
+	END LOOP;
+END $$;
+
+
+
+5.
+
+CREATE OR REPLACE FUNCTION salary_1by4()
+RETURNS VOID 
+LANGUAGE plpgsql
+AS $$
+DECLARE
+avg_salary decimal(10,2);
+r record;
+BEGIN
+	select avg(salary)
+	into avg_salary
+	from staff;
+
+	for r in (select * from staff)
+	loop
+		if r.salary<(0.25*avg_salary) then
+			raise notice 'name:% %',r.stffirstname,r.stflastname;
+		end if;
+	end loop;
+END $$;
+
+6.
+
+CREATE OR REPLACE FUNCTION inc_salary_25()
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+DECLARE 
+old_salary decimal(10,2);
+new_salary decimal(10,2);
+f record;
+BEGIN
+	FOR f IN (select * from staff)
+	LOOP
+		IF (f.salary<10000) THEN
+			old_salary :=f.salary;
+			new_salary :=(f.salary+0.25*f.salary);
+			update staff set salary=new_salary where staffid=f.staffid;
+			raise notice 'staffid:%, old salary:%, new salary:%',f.staffid,old_salary,new_salary;
+		END IF;
+	END LOOP;
+END; $$;
