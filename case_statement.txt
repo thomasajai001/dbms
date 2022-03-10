@@ -1,0 +1,9 @@
+// CASE statement:  (IF 1 then print True ; IF 0 then print FALSE ; ELSE print -1)
+
+SELECT STAFF_ID, SALARY, 
+  CASE WHEN SALARY >= 10000 THEN 'High Salary'
+       WHEN SALARY BETWEEN 5000 AND 10000 THEN 'Average Salary'
+       WHEN SALARY < 5000 THEN 'Too Low'
+  END AS RANGE
+FROM STAFF_SALARY
+ORDER BY 2 DESC;
